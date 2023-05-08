@@ -46,9 +46,7 @@ def verify(cookie):
     cookies = {".ROBLOSECURITY": cookie}
     resp = requests.post("https://accountsettings.roblox.com/v1/email", cookies=cookies,proxies={"https": f"http://{proxy}", "http": f"http://{proxy}"}, headers={"x-csrf-token": csrf(cookie, proxy)}, json={"emailAddress": email})
     ver = requests.post("https://accountsettings.roblox.com/v1/email/verify",proxies={"https": f"http://{proxy}", "http":f"http://{proxy}"}, cookies=cookies, headers={"x-csrf-token": csrf(cookie, proxy)})
-    print(ver.text)
-    print(resp.text)
-    if resp.status_code == 200:
+    if resp.status_code == 200 and ver.status_code == 200:
         time.sleep(5)
         msg = get_inbox(email)
         #print(msg)
