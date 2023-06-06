@@ -1,10 +1,15 @@
 import requests
 import re
+from urlextract import URLExtract
 from threading import Thread
 import time
 from random import randint
-
-
+import string
+import random
+import pyfiglet
+from rich import print
+title = pyfiglet.figlet_format('Kre \n Verifier')
+print(f'[red]{title}[/red]')
 def get_proxy():
     cookies = open("proxies.txt").read()
     lines = cookies.split("\n")
@@ -13,46 +18,18 @@ def get_proxy():
     return lines[i]
 
 
-def generate_email():
-    cookies = {
-        ".AspNetCore.Antiforgery.dXyz_uFU2og": "CfDJ8E2ZItu0PPFGj4KyvmP5PRQGjFISQv6a6x24_xKcmQ1o2dOQd--8uzn3qdwWOfvSpjFbdkKFP057Adgp3UEVDFf8JdlmgGftbB2BPLaI-51PnsPbL0DEmw0RaFgCxJD1cifw8sQ6SugYRtvs0TfP95Y",
-    }
-    headers = {
-        "requestverificationtoken": "CfDJ8E2ZItu0PPFGj4KyvmP5PRQELrHrAcLJB3EWouCi8ED26ID-YFJ7fxhFqVYhdf8rCfPFUd5qhCirHU784Z8YHDSkR2dO5fpNyceJnpRwCeo0gx-d_iJ34B9_X43DZMOIeOp5cs61LhjJA1qkpJsIDcI",
-    }
-    resp = requests.get(
-        "https://tempmailo.com/changemail?_r=0.6912808892321419",
-        proxies={"https": f"http://{get_proxy()}", "http": f"http://{get_proxy()}"},
-        headers=headers,
-        cookies=cookies,
-    )
-    return resp.text
-
 
 def get_inbox(email):
-    cookies = {
-        ".AspNetCore.Antiforgery.dXyz_uFU2og": "CfDJ8E2ZItu0PPFGj4KyvmP5PRQGjFISQv6a6x24_xKcmQ1o2dOQd--8uzn3qdwWOfvSpjFbdkKFP057Adgp3UEVDFf8JdlmgGftbB2BPLaI-51PnsPbL0DEmw0RaFgCxJD1cifw8sQ6SugYRtvs0TfP95Y",
-    }
 
-    headers = {
-        "requestverificationtoken": "CfDJ8E2ZItu0PPFGj4KyvmP5PRQELrHrAcLJB3EWouCi8ED26ID-YFJ7fxhFqVYhdf8rCfPFUd5qhCirHU784Z8YHDSkR2dO5fpNyceJnpRwCeo0gx-d_iJ34B9_X43DZMOIeOp5cs61LhjJA1qkpJsIDcI",
-    }
-
-    json_data = {
-        "mail": email,
-    }
-
-    response = requests.post(
-        "https://tempmailo.com/",
+    response = requests.get(
+        f"https://lasagna.email/api/inbox/{email}",
         proxies={"https": f"http://{get_proxy()}", "http": f"http://{get_proxy()}"},
-        cookies=cookies,
-        headers=headers,
-        json=json_data,
     )
-    return response.text
+    return response.json()["emails"][0]["Body"]
 
 
 def csrf(cookie, proxy):
+ try:
     csr = requests.post(
         "https://friends.roblox.com/v1/contacts/1/request-friendship",
         cookies={".ROBLOSECURITY": cookie},
@@ -60,12 +37,19 @@ def csrf(cookie, proxy):
     ).headers
     # print(csr)
     return csr["x-csrf-token"]
+ except:
+     print("[red]Invalid cookie[/red]")
+     pass
 
 
 def verify(cookie):
     try:
+        extractor = URLExtract()
+
         proxy = get_proxy()
-        email = generate_email()
+        email = res = ''.join(random.choices(string.ascii_lowercase
+                             , k=10)) + "@lasagna.email"
+        print(email)
         cookies = {".ROBLOSECURITY": cookie}
         resp = requests.post(
             "https://accountsettings.roblox.com/v1/email",
@@ -80,14 +64,14 @@ def verify(cookie):
             cookies=cookies,
             headers={"x-csrf-token": csrf(cookie, proxy)},
         )
+        print(str(ver.text) + str(resp.text))
 
         if resp.status_code == 200 and ver.status_code == 200:
-            print("Successfully added email")
-            time.sleep(5)
+            time.sleep(2)
             msg = get_inbox(email)
             # print(msg)
-            link = re.search("(?P<url>https?://[^\s]+)", str(msg)).group("url")
-            print(str(str(link).split("ticket=")[1]).replace("%3D", "="))
+            link = extractor.find_urls(msg)[5]
+            print(link)
             resp2 = requests.post(
                 "https://accountinformation.roblox.com/v1/email/verify",
                 proxies={"https": f"http://{proxy}", "http": f"http://{proxy}"},
@@ -95,15 +79,20 @@ def verify(cookie):
                 cookies=cookies,
                 headers={"x-csrf-token": csrf(cookie, proxy)},
             )
-            print(resp2.text)
+            if resp2.status_code == 200:
+                print("[green]Successfully verified[/green]")
+            else:
+                print("[red]Failed to verify[/red]")
     except:
+        print("[red]Error occured[/red]")
         pass
 
 
 cookies = open("cookies.txt").read().splitlines()
 
 threads = []
-for i in range(int(input("How many threads? \n"))):
+print("[yellow]How many threads?[/yellow]")
+for i in range(int(input(""))):
     thread_cookies = cookies[i::4]
     thread = Thread(
         target=lambda c: [verify(cookie) for cookie in c], args=(thread_cookies,)
