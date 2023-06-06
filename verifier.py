@@ -1,6 +1,5 @@
 import requests
 import re
-from urlextract import URLExtract
 from threading import Thread
 import time
 from random import randint
