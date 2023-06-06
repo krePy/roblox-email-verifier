@@ -1,5 +1,5 @@
 # roblox-email-verifier
-Automatically verifies your roblox accounts using tempmailo
+Automatically verifies your roblox accounts using lasagna.email
 
 Put your proxies in proxies.txt & your cookies in cookies.txt.
 Make sure to install requests module (open cmd and type in: pip install requests)
